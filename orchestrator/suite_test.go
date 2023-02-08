@@ -1,29 +1,24 @@
 package orchestrator_test
 
 import (
-	"context"
-	"testing"
-
-	"github.com/celestiaorg/orchestrator-relayer/orchestrator"
 	qgbtesting "github.com/celestiaorg/orchestrator-relayer/testing"
 	"github.com/stretchr/testify/suite"
+	"testing"
+	"time"
 )
 
 type OrchestratorTestSuite struct {
 	suite.Suite
-	Node         *qgbtesting.TestNode
-	Orchestrator *orchestrator.Orchestrator
+	Node *qgbtesting.CelestiaNetwork
 }
 
 func (s *OrchestratorTestSuite) SetupSuite() {
 	t := s.T()
-	ctx := context.Background()
-	s.Node = qgbtesting.NewTestNode(ctx, t)
-	s.Orchestrator = qgbtesting.NewOrchestrator(s.Node)
+	s.Node = qgbtesting.NewCelestiaNetwork(t, time.Millisecond)
 }
 
 func (s *OrchestratorTestSuite) TearDownSuite() {
-	s.Node.Close()
+	s.Node.Stop()
 }
 
 func TestOrchestrator(t *testing.T) {
