@@ -33,7 +33,7 @@ func newTransactOptsBuilder(privKey *ecdsa.PrivateKey) transactOpsBuilder {
 
 		ethChainID, err := client.ChainID(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get Ethereum chain ID: %w", err)
+			return nil, fmt.Errorf("failed to get Ethereum Chain ID: %w", err)
 		}
 
 		auth, err := bind.NewKeyedTransactorWithChainID(privKey, ethChainID)

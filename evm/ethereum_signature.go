@@ -15,11 +15,12 @@ const (
 )
 
 // NewEthereumSignature creates a new signature over a given byte array.
-func NewEthereumSignature(hash []byte, privateKey *ecdsa.PrivateKey) ([]byte, error) {
+func NewEthereumSignature(data []byte, privateKey *ecdsa.PrivateKey) ([]byte, error) {
 	if privateKey == nil {
 		return nil, errors.Wrap(celestiatypes.ErrEmpty, "private key")
 	}
-	protectedHash := crypto.Keccak256Hash([]uint8(signaturePrefix), hash)
+
+	protectedHash := crypto.Keccak256Hash([]uint8(signaturePrefix), data)
 	return crypto.Sign(protectedHash.Bytes(), privateKey)
 }
 
