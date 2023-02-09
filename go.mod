@@ -50,6 +50,7 @@ require (
 	github.com/Workiva/go-datastructures v1.0.53 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/aws/aws-sdk-go v1.40.45 // indirect
+	github.com/bastjan/netstat v1.0.0 // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
@@ -266,8 +267,8 @@ require (
 )
 
 replace (
-	github.com/celestiaorg/celestia-app => github.com/sweexordious/celestia-app v0.0.2-0.20230207092630-1badda12837b
+	github.com/celestiaorg/celestia-app => ../celestia-app
 	github.com/cosmos/cosmos-sdk => github.com/celestiaorg/cosmos-sdk v1.8.0-sdk-v0.46.7
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-	github.com/tendermint/tendermint => github.com/celestiaorg/celestia-core v1.14.0-tm-v0.34.23
+	github.com/tendermint/tendermint => ../celestia-core
 )

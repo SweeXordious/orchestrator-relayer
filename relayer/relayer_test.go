@@ -2,7 +2,7 @@ package relayer_test
 
 import (
 	"context"
-	"fmt"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/celestiaorg/celestia-app/x/qgb/types"
 	"github.com/stretchr/testify/require"
@@ -21,6 +21,10 @@ func (s *RelayerTestSuite) TestProcessAttestation() {
 	tx, err := s.Relayer.ProcessAttestation(ctx, s.Node.EVMChain.Auth, att)
 	require.NoError(t, err)
 	receipt, err := s.Relayer.EVMClient.WaitForTransaction(ctx, s.Node.EVMChain.Backend, tx)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(1), receipt.Status)
+
+	lastNonce, err := s.Relayer.EVMClient.StateLastEventNonce(nil)
 	require.NoError(t, err)
-	fmt.Print(receipt.Type)
+	assert.Equal(t, att.Nonce, lastNonce)
 }

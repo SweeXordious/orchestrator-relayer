@@ -34,20 +34,12 @@ func NewDHTNetwork(ctx context.Context, count int) *DHTNetwork {
 	stores := make([]ds.Batching, count)
 	dhts := make([]*p2p.QgbDHT, count)
 	for i := 0; i < count; i++ {
-		h, err := libp2p.New()
-		if err != nil {
-			panic(err)
-		}
+		h, store, dht := NewTestDHT(ctx)
 		hosts[i] = h
-		store := dssync.MutexWrap(ds.NewMapDatastore())
 		stores[i] = store
-		dht, err := p2p.NewQgbDHT(ctx, h, store)
-		if err != nil {
-			panic(err)
-		}
 		dhts[i] = dht
 		if i != 0 {
-			err = h.Connect(ctx, peer.AddrInfo{
+			err := h.Connect(ctx, peer.AddrInfo{
 				ID:    hosts[0].ID(),
 				Addrs: hosts[0].Addrs(),
 			})
@@ -64,6 +56,20 @@ func NewDHTNetwork(ctx context.Context, count int) *DHTNetwork {
 		Stores:  stores,
 		DHTs:    dhts,
 	}
+}
+
+// NewTestDHT creates a test DHT not connected to any peers.
+func NewTestDHT(ctx context.Context) (host.Host, ds.Batching, *p2p.QgbDHT) {
+	h, err := libp2p.New()
+	if err != nil {
+		panic(err)
+	}
+	dataStore := dssync.MutexWrap(ds.NewMapDatastore())
+	dht, err := p2p.NewQgbDHT(ctx, h, dataStore)
+	if err != nil {
+		panic(err)
+	}
+	return h, dataStore, dht
 }
 
 // Stop tears down the test network and stops all the services.

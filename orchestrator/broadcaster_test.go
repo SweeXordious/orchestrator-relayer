@@ -2,6 +2,7 @@ package orchestrator_test
 
 import (
 	"context"
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/celestiaorg/orchestrator-relayer/orchestrator"
@@ -62,4 +63,44 @@ func TestBroadcastValsetConfirm(t *testing.T) {
 	assert.NotNil(t, actualConfirm)
 
 	assert.Equal(t, expectedConfirm, actualConfirm)
+}
+
+// TestEmptyPeersTable tests that values are not broadcasted if the DHT peers
+// table is empty.
+func TestEmptyPeersTable(t *testing.T) {
+	_, _, dht := qgbtesting.NewTestDHT(context.Background())
+	defer func(dht *p2p.QgbDHT) {
+		err := dht.Close()
+		if err != nil {
+			require.NoError(t, err)
+		}
+	}(dht)
+
+	// create a test DataCommitmentConfirm
+	dcConfirm := types.DataCommitmentConfirm{
+		EthAddress: "celes1qktu8009djs6uym9uwj84ead24exkezsaqrmn5",
+		Commitment: "test commitment",
+		Signature:  "test signature",
+	}
+
+	// Broadcast the confirm
+	broadcaster := orchestrator.NewBroadcaster(dht)
+	err := broadcaster.BroadcastDataCommitmentConfirm(context.Background(), 10, dcConfirm)
+
+	// check if the correct error is returned
+	assert.Error(t, err)
+	assert.Equal(t, orchestrator.ErrEmptyPeersTable, err)
+
+	// try with a valset confirm
+	vsConfirm := types.ValsetConfirm{
+		EthAddress: "celes1qktu8009djs6uym9uwj84ead24exkezsaqrmn5",
+		Signature:  "test signature",
+	}
+
+	// Broadcast the confirm
+	err = broadcaster.BroadcastValsetConfirm(context.Background(), 10, vsConfirm)
+
+	// check if the correct error is returned
+	assert.Error(t, err)
+	assert.Equal(t, orchestrator.ErrEmptyPeersTable, err)
 }

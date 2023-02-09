@@ -73,6 +73,7 @@ func PrivateKeyPersonalSignFn(privKey *ecdsa.PrivateKey) (PersonalSignFn, error)
 }
 
 // SigToVRS breaks apart a signature into its components to make it compatible with the contracts
+// Expects the signature to be valid as no validation is done on this level.
 func SigToVRS(sigHex string) (v uint8, r, s ethcmn.Hash) {
 	signatureBytes := ethcmn.FromHex(sigHex)
 	vParam := signatureBytes[64]

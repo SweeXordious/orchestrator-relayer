@@ -49,12 +49,21 @@ func NewEVMChain(key *ecdsa.PrivateKey) *EVMChain {
 
 // DEFAULT_PERIODIC_COMMIT_DELAY the default delay to running the commit function on the
 // simulated network.
-const DEFAULT_PERIODIC_COMMIT_DELAY = time.Nanosecond
+const DEFAULT_PERIODIC_COMMIT_DELAY = time.Millisecond
 
 // PeriodicCommit periodically run `commit()` on the simulated network to mine
 // the hanging blocks.
 // If there are no hanging transactions, the chain will not advance.
 func (e *EVMChain) PeriodicCommit(ctx context.Context, delay time.Duration) {
+	defer func() {
+		if r := recover(); r != nil {
+			// we want to exit when the simulated blockchain has stopped and not panic.
+			err, ok := r.(error)
+			if !ok || err.Error() != "blockchain is stopped" {
+				panic(r)
+			}
+		}
+	}()
 	ticker := time.NewTicker(delay)
 	for {
 		select {
@@ -66,6 +75,7 @@ func (e *EVMChain) PeriodicCommit(ctx context.Context, delay time.Duration) {
 	}
 }
 
+// Close stops the EVM chain backend.
 func (e *EVMChain) Close() {
 	err := e.Backend.Close()
 	if err != nil {

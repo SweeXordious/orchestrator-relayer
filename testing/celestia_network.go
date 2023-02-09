@@ -8,6 +8,8 @@ import (
 )
 
 // CelestiaNetwork is a Celestia-app validator running in-process.
+// The EVM key that was used to create this network single validator can
+// be gotten using: `celestiatestnode.NodeEVMPrivateKey`
 type CelestiaNetwork struct {
 	celestiatestnode.Context
 	Accounts  []string

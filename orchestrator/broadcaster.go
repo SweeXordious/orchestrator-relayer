@@ -17,9 +17,15 @@ func NewBroadcaster(qgbDHT *p2p.QgbDHT) *Broadcaster {
 }
 
 func (b Broadcaster) BroadcastDataCommitmentConfirm(ctx context.Context, nonce uint64, confirm types.DataCommitmentConfirm) error {
+	if len(b.QgbDHT.RoutingTable().ListPeers()) == 0 {
+		return ErrEmptyPeersTable
+	}
 	return b.QgbDHT.PutDataCommitmentConfirm(ctx, p2p.GetDataCommitmentConfirmKey(nonce, confirm.EthAddress), confirm)
 }
 
 func (b Broadcaster) BroadcastValsetConfirm(ctx context.Context, nonce uint64, confirm types.ValsetConfirm) error {
+	if len(b.QgbDHT.RoutingTable().ListPeers()) == 0 {
+		return ErrEmptyPeersTable
+	}
 	return b.QgbDHT.PutValsetConfirm(ctx, p2p.GetValsetConfirmKey(nonce, confirm.EthAddress), confirm)
 }
