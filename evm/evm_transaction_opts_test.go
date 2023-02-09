@@ -1,9 +1,10 @@
 package evm_test
 
 import (
+	"testing"
+
 	"github.com/celestiaorg/orchestrator-relayer/evm"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestSigToVRS(t *testing.T) {

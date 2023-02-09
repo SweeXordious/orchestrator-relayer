@@ -2,12 +2,13 @@ package evm_test
 
 import (
 	"context"
+	"math/big"
+
 	celestiatypes "github.com/celestiaorg/celestia-app/x/qgb/types"
 	"github.com/celestiaorg/orchestrator-relayer/evm"
 	"github.com/celestiaorg/orchestrator-relayer/types"
 	wrapper "github.com/celestiaorg/quantum-gravity-bridge/wrappers/QuantumGravityBridge.sol"
 	ethcmn "github.com/ethereum/go-ethereum/common"
-	"math/big"
 )
 
 func (s *EVMTestSuite) TestSubmitDataCommitment() {

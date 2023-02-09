@@ -2,6 +2,8 @@ package evm_test
 
 import (
 	"crypto/ecdsa"
+	"testing"
+
 	celestiatypes "github.com/celestiaorg/celestia-app/x/qgb/types"
 	"github.com/celestiaorg/orchestrator-relayer/evm"
 	qgbtesting "github.com/celestiaorg/orchestrator-relayer/testing"
@@ -9,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"testing"
 )
 
 type EVMTestSuite struct {

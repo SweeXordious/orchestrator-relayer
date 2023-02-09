@@ -2,6 +2,7 @@ package relayer_test
 
 import (
 	"context"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/celestiaorg/celestia-app/x/qgb/types"

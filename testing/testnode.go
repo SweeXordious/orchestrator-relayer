@@ -2,9 +2,10 @@ package testing
 
 import (
 	"context"
-	celestiatestnode "github.com/celestiaorg/celestia-app/testutil/testnode"
 	"testing"
 	"time"
+
+	celestiatestnode "github.com/celestiaorg/celestia-app/testutil/testnode"
 )
 
 // TestNode contains a DHTNetwork along with a test Celestia network.

@@ -2,8 +2,9 @@ package orchestrator_test
 
 import (
 	"context"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/celestiaorg/orchestrator-relayer/orchestrator"
 	"github.com/celestiaorg/orchestrator-relayer/p2p"
