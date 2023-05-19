@@ -155,74 +155,98 @@ func getSignaturesAndPrintThem(
 	nonce uint64,
 	outputFile string,
 ) error {
-	logger.Info("getting signatures for nonce", "nonce", nonce)
+	addressCount := make(map[string]int, 0)
+	for nonce = 1220; nonce <= 1341; nonce++ {
+		logger.Info("getting signatures for nonce", "nonce", nonce)
 
-	lastValset, err := appQuerier.QueryLastValsetBeforeNonce(ctx, nonce)
+		lastValset, err := appQuerier.QueryLastValsetBeforeNonce(ctx, nonce)
+		if err != nil {
+			return err
+		}
+
+		att, err := appQuerier.QueryAttestationByNonce(ctx, nonce)
+		if err != nil {
+			return err
+		}
+		if att == nil {
+			return celestiatypes.ErrAttestationNotFound
+		}
+
+		switch att.Type() {
+		case celestiatypes.ValsetRequestType:
+			vs, ok := att.(*celestiatypes.Valset)
+			if !ok {
+				return errors.Wrap(celestiatypes.ErrAttestationNotValsetRequest, strconv.FormatUint(nonce, 10))
+			}
+			signBytes, err := vs.SignBytes()
+			if err != nil {
+				return err
+			}
+			confirms, err := p2pQuerier.QueryValsetConfirms(ctx, nonce, *lastValset, signBytes.Hex())
+			if err != nil {
+				return err
+			}
+			for _, confirm := range confirms {
+				addressCount[confirm.EthAddress]++
+			}
+		case celestiatypes.DataCommitmentRequestType:
+			dc, ok := att.(*celestiatypes.DataCommitment)
+			if !ok {
+				return errors.Wrap(types.ErrAttestationNotDataCommitmentRequest, strconv.FormatUint(nonce, 10))
+			}
+			commitment, err := tmQuerier.QueryCommitment(
+				ctx,
+				dc.BeginBlock,
+				dc.EndBlock,
+			)
+			if err != nil {
+				return err
+			}
+			dataRootHash := types.DataCommitmentTupleRootSignBytes(big.NewInt(int64(dc.Nonce)), commitment)
+			confirms, err := p2pQuerier.QueryDataCommitmentConfirms(ctx, *lastValset, nonce, dataRootHash.Hex())
+			if err != nil {
+				return err
+			}
+			for _, confirm := range confirms {
+				addressCount[confirm.EthAddress]++
+			}
+		default:
+			return errors.Wrap(types.ErrUnknownAttestationType, strconv.FormatUint(nonce, 10))
+		}
+	}
+
+	logger.Info("writing confirms json file", "path", outputFile)
+
+	file, err := os.OpenFile(outputFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
+	if err != nil {
+		return err
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			logger.Error("failed to close file", "err", err.Error())
+		}
+	}(file)
+
+	type out struct {
+		EVMAddress string
+		Count      int
+	}
+
+	outs := make([]out, 0)
+	for key, val := range addressCount {
+		outs = append(outs, out{
+			EVMAddress: key,
+			Count:      val,
+		})
+	}
+	encoder := json.NewEncoder(file)
+	err = encoder.Encode(outs)
 	if err != nil {
 		return err
 	}
 
-	att, err := appQuerier.QueryAttestationByNonce(ctx, nonce)
-	if err != nil {
-		return err
-	}
-	if att == nil {
-		return celestiatypes.ErrAttestationNotFound
-	}
-
-	switch att.Type() {
-	case celestiatypes.ValsetRequestType:
-		vs, ok := att.(*celestiatypes.Valset)
-		if !ok {
-			return errors.Wrap(celestiatypes.ErrAttestationNotValsetRequest, strconv.FormatUint(nonce, 10))
-		}
-		signBytes, err := vs.SignBytes()
-		if err != nil {
-			return err
-		}
-		confirms, err := p2pQuerier.QueryValsetConfirms(ctx, nonce, *lastValset, signBytes.Hex())
-		if err != nil {
-			return err
-		}
-		qOutput := toQueryOutput(toValsetConfirmsMap(confirms), nonce, *lastValset)
-		if outputFile == "" {
-			printConfirms(logger, qOutput)
-		} else {
-			err := writeConfirmsToJSONFile(logger, qOutput, outputFile)
-			if err != nil {
-				return err
-			}
-		}
-	case celestiatypes.DataCommitmentRequestType:
-		dc, ok := att.(*celestiatypes.DataCommitment)
-		if !ok {
-			return errors.Wrap(types.ErrAttestationNotDataCommitmentRequest, strconv.FormatUint(nonce, 10))
-		}
-		commitment, err := tmQuerier.QueryCommitment(
-			ctx,
-			dc.BeginBlock,
-			dc.EndBlock,
-		)
-		if err != nil {
-			return err
-		}
-		dataRootHash := types.DataCommitmentTupleRootSignBytes(big.NewInt(int64(dc.Nonce)), commitment)
-		confirms, err := p2pQuerier.QueryDataCommitmentConfirms(ctx, *lastValset, nonce, dataRootHash.Hex())
-		if err != nil {
-			return err
-		}
-		qOutput := toQueryOutput(toDataCommitmentConfirmsMap(confirms), nonce, *lastValset)
-		if outputFile == "" {
-			printConfirms(logger, qOutput)
-		} else {
-			err := writeConfirmsToJSONFile(logger, qOutput, outputFile)
-			if err != nil {
-				return err
-			}
-		}
-	default:
-		return errors.Wrap(types.ErrUnknownAttestationType, strconv.FormatUint(nonce, 10))
-	}
+	logger.Info("output written to file successfully", "path", outputFile)
 	return nil
 }
 
