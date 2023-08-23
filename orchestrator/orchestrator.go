@@ -104,7 +104,7 @@ func (orch Orchestrator) Start(ctx context.Context) {
 		err := orch.EnqueueMissingEvents(withCancel, noncesQueue, signalChan)
 		if err != nil {
 			orch.Logger.Error("error enqueuing missing attestations", "err", err)
-			cancel()
+			//cancel()
 		}
 		orch.Logger.Error("stopping enqueuing missing attestations")
 	}()
@@ -120,6 +120,7 @@ func (orch Orchestrator) StartNewEventsListener(
 	subscriptionName := "attestation-changes"
 	query := fmt.Sprintf("%s.%s='%s'", celestiatypes.EventTypeAttestationRequest, sdk.AttributeKeyModule, celestiatypes.ModuleName)
 	results, err := orch.TmQuerier.SubscribeEvents(ctx, subscriptionName, query)
+	fmt.Println("1")
 	if err != nil {
 		return err
 	}
@@ -145,6 +146,7 @@ func (orch Orchestrator) StartNewEventsListener(
 			running := orch.TmQuerier.IsRunning(ctx)
 			// if the connection is lost, retry connecting a few times
 			if !running {
+				fmt.Println("3")
 				orch.Logger.Error("tendermint RPC down. Retrying to connect")
 				err := orch.Retrier.Retry(ctx, func() error {
 					err := orch.TmQuerier.Reconnect()
@@ -163,12 +165,14 @@ func (orch Orchestrator) StartNewEventsListener(
 				}
 			}
 		case result := <-results:
+			fmt.Println("2")
 			blockEvent := mustGetEvent(result, coretypes.EventTypeKey)
 			isBlock := blockEvent[0] == coretypes.EventNewBlock
 			if !isBlock {
 				// we only want to handle the attestation when the block is committed
 				continue
 			}
+			fmt.Println("4")
 			attestationEvents := mustGetEvent(result, attestationEventName)
 			for _, attEvent := range attestationEvents {
 				nonce, err := strconv.Atoi(attEvent)
@@ -198,43 +202,54 @@ func (orch Orchestrator) EnqueueMissingEvents(
 		return err
 	}
 
+	fmt.Println("6")
 	latestNonce, err := orch.AppQuerier.QueryLatestAttestationNonce(ctx)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println(latestNonce)
+	fmt.Println("7")
 	lastUnbondingHeight, err := orch.AppQuerier.QueryLastUnbondingHeight(ctx)
 	if err != nil {
 		return err
 	}
+	fmt.Println(lastUnbondingHeight)
 	var startingNonce uint64
 	if lastUnbondingHeight == 0 {
 		// chain startup case
 		startingNonce = 1
 	} else {
+		fmt.Println("8")
 		lastDc, err := orch.AppQuerier.QueryLatestDataCommitment(ctx)
 		if err != nil {
 			return err
 		}
+		fmt.Println(lastDc)
 		if lastUnbondingHeight >= int64(lastDc.EndBlock) {
+			fmt.Println("9")
 			// if no data commitment has committed to the last unbonding height,
 			// then, the orchestrator should start signing at the latest valset
 			vs, err := orch.AppQuerier.QueryLatestValset(ctx)
 			if err != nil {
 				return err
 			}
+			fmt.Println(vs)
 			startingNonce = vs.Nonce
 		} else {
 			// some data commitment has committed to the last unbonding height,
 			// so, we start signing from the valset that attests to that one
+			fmt.Println("10")
 			dc, err := orch.AppQuerier.QueryDataCommitmentForHeight(ctx, uint64(lastUnbondingHeight))
 			if err != nil {
 				return err
 			}
+			fmt.Println(dc)
 			startingValset, err := orch.AppQuerier.QueryLastValsetBeforeNonce(ctx, dc.Nonce)
 			if err != nil {
 				return err
 			}
+			fmt.Println(startingValset)
 			startingNonce = startingValset.Nonce
 		}
 	}
