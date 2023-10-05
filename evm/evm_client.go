@@ -77,7 +77,7 @@ func (ec *Client) DeployQGBContract(
 	initBridge bool,
 ) (gethcommon.Address, *coregethtypes.Transaction, *qgbwrapper.Wrappers, error) {
 	// deploy the QGB implementation contract
-	impAddr, impTx, _, err := ec.DeployImplementation(opts, contractBackend)
+	impAddr, impTx, imp, err := ec.DeployImplementation(opts, contractBackend)
 	if err != nil {
 		return gethcommon.Address{}, nil, nil, err
 	}
@@ -89,29 +89,20 @@ func (ec *Client) DeployQGBContract(
 	if err != nil {
 		return gethcommon.Address{}, nil, nil, err
 	}
-	qgbABI, err := qgbwrapper.WrappersMetaData.GetAbi()
-	if err != nil {
-		return gethcommon.Address{}, nil, nil, err
-	}
-	initData, err := qgbABI.Pack("initialize", big.NewInt(int64(contractInitNonce)), big.NewInt(int64(contractInitValset.TwoThirdsThreshold())), ethVsHash)
-	if err != nil {
-		return gethcommon.Address{}, nil, nil, err
-	}
 
 	// bump the nonce
 	if opts.Nonce != nil {
 		opts.Nonce.Add(opts.Nonce, big.NewInt(1))
 	}
 
-	// deploy the ERC1967 proxy, link it to the QGB implementation contract, and initialize it
-	proxyAddr, tx, _, err := ec.DeployERC1867Proxy(opts, contractBackend, impAddr, initData)
+	_, err = imp.Initialize(opts, big.NewInt(int64(contractInitNonce)), big.NewInt(int64(contractInitValset.TwoThirdsThreshold())), ethVsHash)
 	if err != nil {
 		return gethcommon.Address{}, nil, nil, err
 	}
 
-	ec.logger.Info("deploying QGB proxy contract...", "address", proxyAddr, "tx_hash", tx.Hash().Hex())
+	ec.logger.Info("deploying QGB proxy contract...", "address", impAddr, "tx_hash", impTx.Hash().Hex())
 
-	bridge, err := qgbwrapper.NewWrappers(proxyAddr, contractBackend)
+	bridge, err := qgbwrapper.NewWrappers(impAddr, contractBackend)
 	if err != nil {
 		return gethcommon.Address{}, nil, nil, err
 	}
@@ -121,7 +112,7 @@ func (ec *Client) DeployQGBContract(
 		ec.Wrapper = bridge
 	}
 
-	return proxyAddr, tx, bridge, nil
+	return impAddr, impTx, bridge, nil
 }
 
 func (ec *Client) UpdateValidatorSet(
